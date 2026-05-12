@@ -1,0 +1,90 @@
+# Part 1: Repository Analysis
+
+## Task 1.1 – Python Repository Selection
+
+After reviewing all five repositories, I identified **four** as strictly Python-primary and **one** as a multi-language platform where Python is only one of several core languages.
+
+---
+| Repository    | Python Primary?     | Primary Purpose                                      | Key Dependencies                                                     | Architecture Pattern                                                       | Target Domain                              |
+| ------------- | ------------------- | ---------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------ |
+| aiokafka      | Yes                 | Async Kafka producer/consumer client for Python      | asyncio, kafka-python, async-timeout, packaging                      | Event-driven async I/O; thin wrapper over kafka-python's protocol layer    | Distributed systems / real-time messaging  |
+| Airbyte       | No (multi-language) | Open-source ELT data integration platform            | Java (core platform), Python CDK (connectors), TypeScript/React (UI) | Microservices; connector-as-Docker-container model                         | Data engineering / ETL pipelines           |
+| Archivematica | Yes                 | Digital preservation and archival workflow system    | Django, Gearman, MySQL, METS, Bagit                                  | Task-queue-driven workflow microservices; Django admin UI                  | Digital preservation / cultural heritage   |
+| beets         | Yes                 | Command-line music library manager and tagger        | mutagen, SQLite (via sqlite3), requests, jellyfish                   | Plugin-based CLI framework; SQLite-backed library model                    | Music / media management                   |
+| MetaGPT       | Yes                 | Multi-agent LLM framework simulating a software team | openai, anthropic, pydantic, tenacity, aiohttp                       | Role-based multi-agent system; asynchronous message-passing between agents | AI / LLM-orchestration / autonomous agents |
+
+
+## Detailed Analysis
+
+### 1. aiokafka —  Strictly Python
+
+**Purpose:** `aiokafka` is an asyncio-native Python client for Apache Kafka. It exposes `AIOKafkaProducer` and `AIOKafkaConsumer` classes that let Python applications produce and consume Kafka messages without blocking the event loop. The library reuses `kafka-python`'s wire-protocol parsing layer and builds async coroutine APIs on top.
+
+**Key Dependencies:**
+- `asyncio` (stdlib) — the event loop and coroutine runtime
+- `kafka-python` — low-level Kafka protocol encoding/decoding
+- `async-timeout` — timeout management for async calls
+- `packaging` — version parsing for broker API negotiation
+
+**Architecture:** The codebase is split into `aiokafka/client.py` (broker connections), `aiokafka/consumer/` (fetcher, group coordinator, subscription state), and `aiokafka/producer/` (message accumulator, record batch builder). All I/O is non-blocking; background asyncio tasks handle heartbeats, offset commits, and group rebalancing.
+
+**Target Use Case:** Python backend services that need high-throughput, non-blocking Kafka integration — e.g., async web frameworks (FastAPI, aiohttp), stream-processing pipelines.
+
+---
+
+### 2. airbyte —  NOT Strictly Python
+
+**Why excluded:** Airbyte's core orchestration platform is written in Java and Kotlin, the frontend in TypeScript/React, and while individual connectors can be written in Python using the Python CDK, the repository as a whole is fundamentally multi-language. The platform runtime, scheduler, and Temporal-based job orchestrator are all Java. GitHub itself classifies the primary language of the monorepo as Java.
+
+---
+
+### 3. archivematica —  Strictly Python
+
+**Purpose:** Archivematica is an open-source digital preservation system that automates the ingest, validation, normalization, and long-term storage of digital objects according to OAIS standards. It produces Archival Information Packages (AIPs) and Dissemination Information Packages (DIPs).
+
+**Key Dependencies:**
+- Django — admin UI and ORM
+- Gearman — job queue for distributing micro-service tasks
+- METS/PREMIS XML libraries — metadata standards
+- Bagit — packaging standard for AIPs
+
+**Architecture:** Workflow-driven microservices; each archival task (format identification, normalization, checksum verification) is a discrete Python service triggered via Gearman queues. A central MCP (Micro-services Controller) dispatches work and persists state in MySQL.
+
+**Target Use Case:** Libraries, archives, museums, and government institutions managing long-term preservation of born-digital and digitized materials.
+
+---
+
+### 4. beets —  Strictly Python
+
+**Purpose:** `beets` is a command-line music library manager that auto-tags audio files using MusicBrainz, organizes a file collection by customizable path templates, and exposes a rich plugin API for extended functionality (Last.fm scrobbling, ReplayGain, lyrics fetching, etc.).
+
+**Key Dependencies:**
+- `mutagen` — reading and writing audio metadata tags (MP3, FLAC, AAC, etc.)
+- `sqlite3` (stdlib) — backing store for the music library database
+- `requests` — HTTP client for MusicBrainz queries
+- `jellyfish` — string distance for fuzzy album/track matching
+
+**Architecture:** Plugin-based CLI framework. A central `Library` object wraps SQLite. Commands are plugins that hook into the event system. The auto-tagger uses a pipeline architecture — candidate fetching, distance scoring, and user confirmation — before writing tags.
+
+**Target Use Case:** Music enthusiasts and power users who want a scriptable, terminal-first tool to keep large audio collections cleanly tagged and organized.
+
+---
+
+### 5. MetaGPT —  Strictly Python
+
+**Purpose:** MetaGPT is a multi-agent LLM framework that models a software development company — each agent plays a role (Product Manager, Architect, Engineer, QA) and they collaborate via structured message passing to produce code, tests, and documentation from a natural-language requirement.
+
+**Key Dependencies:**
+- `openai` / `anthropic` — LLM API clients
+- `pydantic` — structured output validation for agent messages
+- `tenacity` — retry logic for API calls
+- `aiohttp` — async HTTP
+- `metagpt` internal modules (roles, actions, memory, schema)
+
+**Architecture:** Role-based, message-driven multi-agent system. Each `Role` subscribes to certain message types from a shared environment, triggers `Action` coroutines, and publishes structured output back. Memory, schema validation, and a shared "company" context coordinate the agents.
+
+**Target Use Case:** AI researchers, autonomous coding experiments, and teams exploring LLM-based software engineering automation.
+
+---
+
+*I declare that all written content in this assessment is my own work, created without the use of AI language models or automated writing tools. All technical analysis and documentation reflects my personal understanding and has been written in my own words.*
